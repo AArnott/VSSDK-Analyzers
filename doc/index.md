@@ -11,5 +11,6 @@ ID | Title | Category
 [VSSDK004](VSSDK004.md) | Use BackgroundLoad flag in ProvideAutoLoad attribute | Performance
 [VSSDK005](VSSDK005.md) | Use the JoinableTaskContext singleton | Reliability
 [VSSDK006](VSSDK006.md) | Check service exists | Reliability
+[VSSDK007](VSSDK007.md) | Avoid using SxS assemblies for exchange types | Versioning
 
 [1]: https://nuget.org/packages/microsoft.visualstudio.sdk.analyzers
