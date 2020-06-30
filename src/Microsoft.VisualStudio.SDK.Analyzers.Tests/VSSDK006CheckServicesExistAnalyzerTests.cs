@@ -412,6 +412,78 @@ class Test : Package {
     }
 
     [Fact]
+    public async Task FieldAssignedInCtor_GetService_CheckedNullThrows()
+    {
+        var test = @"
+using System;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+class Test {
+    IVsBuildManagerAccessor svc;
+    public Test(IServiceProvider serviceProvider) {
+        this.svc = serviceProvider.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
+        if (this.svc == null) {
+            throw new InvalidOperationException();
+        }
+    }
+
+    public void Foo() {
+        this.svc.BeginDesignTimeBuild();
+    }
+}
+";
+
+        await Verify.VerifyAnalyzerAsync(test);
+    }
+
+    [Fact]
+    public async Task FieldAssignedInCtor_GetService_CheckedWhenUsedInOrExpression()
+    {
+        var test = @"
+using System;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+class Test {
+    IVsBuildManagerAccessor svc;
+    public Test(IServiceProvider serviceProvider) {
+        this.svc = serviceProvider.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
+    }
+
+    public void Foo() {
+        bool v = this.svc == null || this.svc.BeginDesignTimeBuild() == 0;
+    }
+}
+";
+
+        await Verify.VerifyAnalyzerAsync(test);
+    }
+
+    [Fact]
+    public async Task FieldAssignedInCtor_GetService_CheckedWhenUsedInAndExpression()
+    {
+        var test = @"
+using System;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+class Test {
+    IVsBuildManagerAccessor svc;
+    public Test(IServiceProvider serviceProvider) {
+        this.svc = serviceProvider.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
+    }
+
+    public void Foo() {
+        bool v = this.svc != null && this.svc.BeginDesignTimeBuild() == 0;
+    }
+}
+";
+
+        await Verify.VerifyAnalyzerAsync(test);
+    }
+
+    [Fact]
     public async Task FieldAssigned_GetService_ThenUsedAsync()
     {
         var test = @"
@@ -896,6 +968,44 @@ class Test : Package {
         if (svc != null) {
             svc.BeginDesignTimeBuild();
         }
+    }
+}
+";
+        await Verify.VerifyAnalyzerAsync(test);
+    }
+
+    [Fact]
+    public async Task LocalAssigned_CheckedByConditionalExpression_GetService_ThenUsed()
+    {
+        var test = @"
+using System;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+class Test {
+    public void Foo(IServiceProvider sp) {
+        var svc = sp.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
+        var val = svc is object ? svc.BeginDesignTimeBuild() : 0;
+    }
+}
+";
+        await Verify.VerifyAnalyzerAsync(test);
+    }
+
+    [Fact]
+    public async Task LocalAssigned_CheckedByInvertedConditionalExpression_GetService_ThenUsed()
+    {
+        var test = @"
+using System;
+using System.Threading.Tasks;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+
+class Test {
+    public void Foo(IServiceProvider sp) {
+        var svc = sp.GetService(typeof(SVsBuildManagerAccessor)) as IVsBuildManagerAccessor;
+        var val = svc is null ? 0 : svc.BeginDesignTimeBuild();
     }
 }
 ";
